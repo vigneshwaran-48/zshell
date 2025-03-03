@@ -18,3 +18,17 @@ func EnsureDirExists(dir string) error {
 	}
 	return nil
 }
+
+func GetAuthDataFile() (string, error) {
+	userHomeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s/.zmail/auth.json", userHomeDir), nil
+}
+
+func IsFileExists(path string) bool {
+	_, err := os.Stat(path)
+	// Do we need to check for other errors?
+	return err == nil
+}
