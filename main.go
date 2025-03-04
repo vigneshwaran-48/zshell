@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 
-	"github.com/reeflective/console"
 	"github.com/spf13/cobra"
 	"github.com/vigneshwaran-48/zshell/cmd"
 )
@@ -16,7 +15,5 @@ func main() {
 		}
 		return
 	}
-	app := console.New("ZShell")
-	app.ActiveMenu().SetCommands(cmd.GetCmds)
-	app.Start()
+  cmd.StartInteractiveShell()
 }
