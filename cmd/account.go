@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 	zmail "github.com/vigneshwaran-48/zmail-go-sdk"
 	"github.com/vigneshwaran-48/zshell/utils"
