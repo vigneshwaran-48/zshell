@@ -7,9 +7,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type CmdResult struct {
+	header []string
+	rows   map[string]string
+}
+
 var app *console.Console
 
 var remainingCmds []string
+
+var lastCmdResult *CmdResult
 
 func GetCmds() *cobra.Command {
 	return rootCmd
@@ -28,6 +35,10 @@ func StartInteractiveShell() {
 				} else {
 					remainingCmds = []string{} // Reached the end, Reset the remaining command
 				}
+
+				// TODO Need to find and replace the reference variables used in the commands with the last command result.
+
+				lastCmdResult = nil // Clear the last command result
 				app.ActiveMenu().RunCommandArgs(app.ActiveMenu().Context(), formattedCmds[0])
 			}
 			return nil
