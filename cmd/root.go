@@ -13,12 +13,6 @@ var rootCmd = &cobra.Command{
 	Use:     "zshell",
 	Version: "1.0",
 	Long:    "Zoho shell",
-	PersistentPostRun: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 || args[0] != "|" {
-			return
-		}
-		app.ActiveMenu().RunCommandArgs(app.ActiveMenu().Context(), args[1:])
-	},
 }
 
 func createDefaultConfig(path string) error {
