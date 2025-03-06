@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/reeflective/console"
@@ -24,10 +23,6 @@ var remainingCmds []string
 var previousCmd []string
 
 var lastCmdResult *CmdResult
-
-var isReferenceCmdLoop = false
-
-var referenceRows []map[string]string
 
 func GetCmds() *cobra.Command {
 	return rootCmd
@@ -54,11 +49,9 @@ func StartInteractiveShell() {
 				cmdToRun := formattedCmds[0]
 				previousCmd = cmdToRun
 
-				if isReferenceCmdLoop {
-				} else if lastCmdResult != nil && hasVariables(cmdToRun) {
+				if lastCmdResult != nil && hasVariables(cmdToRun) {
 					var headers []string
 					headers = append(headers, lastCmdResult.header...)
-					fmt.Println("start")
 					for _, row := range lastCmdResult.rows {
 						var currCmd []string
 						currCmd = append(currCmd, cmdToRun...)
@@ -69,11 +62,10 @@ func StartInteractiveShell() {
 								*token = row[(*token)[1:]]
 							}
 						}
-						app.ActiveMenu().RunCommandArgs(app.ActiveMenu().Context(), currCmd)
+						app.ActiveMenu().RunCommandArgs(context.Background(), currCmd)
 					}
-					fmt.Println("end")
 				} else {
-					app.ActiveMenu().RunCommandArgs(app.ActiveMenu().Context(), cmdToRun)
+					app.ActiveMenu().RunCommandArgs(context.Background(), cmdToRun)
 				}
 			} else {
 				if previousCmd[0] != "display" && previousCmd[0] != "help" {
