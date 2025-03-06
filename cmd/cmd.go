@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"strings"
 
 	"github.com/reeflective/console"
 	"github.com/spf13/cobra"
@@ -9,17 +9,24 @@ import (
 
 type CmdResult struct {
 	header []string
-	rows   map[string]string
+	rows   []map[string]string
 }
 
 var app *console.Console
 
 var remainingCmds []string
 
+var previousCmd []string
+
 var lastCmdResult *CmdResult
 
 func GetCmds() *cobra.Command {
 	return rootCmd
+}
+
+// All commands which is not dependant on previous command result can use this as a PreRun hook in the cobra command definition.
+func ResetPreviousOutput(cmd *cobra.Command, args []string) {
+	lastCmdResult = nil
 }
 
 func StartInteractiveShell() {
@@ -30,16 +37,32 @@ func StartInteractiveShell() {
 			if len(remainingCmds) > 0 {
 				formattedCmds := formatCommand(remainingCmds)
 				if len(formattedCmds) > 1 {
-					fmt.Println("More commands present")
 					remainingCmds = formattedCmds[1]
 				} else {
 					remainingCmds = []string{} // Reached the end, Reset the remaining command
 				}
 
-				// TODO Need to find and replace the reference variables used in the commands with the last command result.
+				cmdToRun := formattedCmds[0]
 
-				lastCmdResult = nil // Clear the last command result
-				app.ActiveMenu().RunCommandArgs(app.ActiveMenu().Context(), formattedCmds[0])
+				if lastCmdResult != nil {
+					for i := range cmdToRun {
+						token := &cmdToRun[i]
+						if strings.HasPrefix(*token, "$") {
+							variableName := (*token)[1:]
+							if !isVariableExists(variableName) {
+								continue
+							}
+							*token = lastCmdResult.rows[0][variableName] // Need to iterate all rows
+						}
+					}
+				}
+				previousCmd = cmdToRun
+
+				app.ActiveMenu().RunCommandArgs(app.ActiveMenu().Context(), cmdToRun)
+			} else {
+				if previousCmd[0] != "display" && previousCmd[0] != "help" {
+					displayCmd.Run(rootCmd, []string{})
+				}
 			}
 			return nil
 		},
@@ -51,6 +74,7 @@ func StartInteractiveShell() {
 			if len(formattedCmds) > 1 {
 				remainingCmds = formattedCmds[1]
 			}
+			previousCmd = formattedCmds[0]
 			return formattedCmds[0], nil
 		},
 	}
@@ -78,4 +102,13 @@ func formatCommand(cmds []string) [][]string {
 	result = append(result, buffer)
 
 	return result
+}
+
+func isVariableExists(variable string) bool {
+	for _, header := range lastCmdResult.header {
+		if header == variable {
+			return true
+		}
+	}
+	return false
 }
