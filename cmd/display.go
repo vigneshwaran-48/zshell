@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
@@ -13,9 +11,7 @@ var displayCmd = &cobra.Command{
 	Long:  "Display last command output",
 	Run: func(cmd *cobra.Command, args []string) {
 		if lastCmdResult == nil {
-			fmt.Println("No result to display")
 			return
-
 		}
 		table := pterm.TableData{
 			lastCmdResult.header,

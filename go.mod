@@ -3,11 +3,12 @@ module github.com/vigneshwaran-48/zshell
 go 1.23.6
 
 require (
+	github.com/pterm/pterm v0.12.80
 	github.com/reeflective/console v0.1.22
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
-	github.com/vigneshwaran-48/zmail-go-sdk v0.0.0-20250302163333-d67050abd947
-	golang.org/x/oauth2 v0.27.0
+	github.com/vigneshwaran-48/zmail-go-sdk v0.0.1
+	golang.org/x/oauth2 v0.28.0
 )
 
 require (
@@ -25,7 +26,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
-	github.com/pterm/pterm v0.12.80 // indirect
 	github.com/reeflective/readline v1.1.2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rsteube/carapace v0.46.3-0.20231214181515-27e49f3c3b69 // indirect
