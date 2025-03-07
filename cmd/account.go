@@ -1,7 +1,14 @@
 package cmd
 
 import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"github.com/vigneshwaran-48/zmail-go-sdk"
+	"github.com/vigneshwaran-48/zshell/utils"
 )
 
 var account = &cobra.Command{
@@ -37,6 +44,34 @@ var accountList = &cobra.Command{
 			rows:   rows,
 		}
 	},
+}
+
+func getAccountId(accountId string, client *zmail.APIClient, ctx context.Context) string {
+	if accountId == "" || !utils.IsNumber(accountId) {
+		req := client.AccountsAPI.Getmailaccounts(ctx)
+		accountsResp, httpResp, err := req.Execute()
+		if err != nil {
+			handleClientReqError(httpResp, err)
+		}
+		if accountId == "" {
+			options := []string{}
+			for _, account := range accountsResp.Data {
+				options = append(options, fmt.Sprintf("%s (%s)", *account.AccountDisplayName, *account.AccountId))
+			}
+			selectedOption, _ := pterm.DefaultInteractiveSelect.WithOptions(options).Show("Please select an account")
+			seletedOptionSplit := strings.Split(selectedOption, " ")
+			accountIdStr := seletedOptionSplit[len(seletedOptionSplit)-1]
+			accountId = accountIdStr[1 : len(accountIdStr)-1]
+		} else {
+			for _, account := range accountsResp.Data {
+				if *account.AccountDisplayName == accountId {
+					accountId = *account.AccountId
+					break
+				}
+			}
+		}
+	}
+	return accountId
 }
 
 func init() {
