@@ -164,6 +164,62 @@ var folderRenameCmd = &cobra.Command{
 	},
 }
 
+var folderEnableImapCmd = &cobra.Command{
+	Use:   "enable-imap",
+	Short: "Enables imap view",
+	Long:  "Enables imap view",
+	Run: func(cmd *cobra.Command, args []string) {
+		accountId, err := cmd.Flags().GetString("account")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+
+		client, ctx := getAuthDetails(cmd)
+
+		accountId = getAccountId(accountId, client, ctx)
+
+		folderId, err := cmd.Flags().GetString("folder")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		folderId = getFolderId(accountId, folderId, client, ctx)
+
+		payload := zmail.NewFolderUpdatePayload(zmail.SET_VIEWABLE_IN_IMAP)
+		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
+		if err != nil {
+			handleClientReqError(httpResp, err)
+		}
+	},
+}
+
+var folderDisableImapCmd = &cobra.Command{
+	Use:   "disable-imap",
+	Short: "Disable imap view",
+	Long:  "Disable imap view",
+	Run: func(cmd *cobra.Command, args []string) {
+		accountId, err := cmd.Flags().GetString("account")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+
+		client, ctx := getAuthDetails(cmd)
+
+		accountId = getAccountId(accountId, client, ctx)
+
+		folderId, err := cmd.Flags().GetString("folder")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		folderId = getFolderId(accountId, folderId, client, ctx)
+
+		payload := zmail.NewFolderUpdatePayload(zmail.REMOVE_VIEWABLE_IN_IMAP)
+		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
+		if err != nil {
+			handleClientReqError(httpResp, err)
+		}
+	},
+}
+
 func getFolderId(accountId string, folderId string, client *zmail.APIClient, ctx context.Context) string {
 	newFolderId := ""
 	if folderId == "" || !utils.IsNumber(folderId) {
@@ -197,6 +253,8 @@ func init() {
 	folderCmd.AddCommand(folderListCmd)
 	folderCmd.AddCommand(folderMoveCmd)
 	folderCmd.AddCommand(folderRenameCmd)
+	folderCmd.AddCommand(folderEnableImapCmd)
+	folderCmd.AddCommand(folderDisableImapCmd)
 
 	folderCmd.PersistentFlags().String("account", "", "Account Id (Can be id or the account's name)")
 
@@ -206,6 +264,9 @@ func init() {
 
 	folderRenameCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
 	folderRenameCmd.PersistentFlags().String("name", "", "New folder name")
+
+	folderEnableImapCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
+	folderDisableImapCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
 
 	rootCmd.AddCommand(folderCmd)
 }
