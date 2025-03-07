@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"io"
-
 	"github.com/spf13/cobra"
 )
 
@@ -24,12 +21,7 @@ var accountList = &cobra.Command{
 		req := client.AccountsAPI.Getmailaccounts(ctx)
 		accountsResp, httpResp, err := req.Execute()
 		if err != nil {
-			bodyStr, err := io.ReadAll(httpResp.Body)
-			if err != nil {
-				cobra.CheckErr(err)
-			}
-			fmt.Println(string(bodyStr))
-			cobra.CheckErr(err)
+			handleClientReqError(httpResp, err)
 		}
 		var rows []map[string]string
 		for _, account := range accountsResp.Data {
