@@ -220,6 +220,89 @@ var folderDisableImapCmd = &cobra.Command{
 	},
 }
 
+var folderReadCmd = &cobra.Command{
+	Use:   "read",
+	Short: "Mark as Read folder",
+	Long:  "Mark as Read folder",
+	Run: func(cmd *cobra.Command, args []string) {
+		accountId, err := cmd.Flags().GetString("account")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+
+		client, ctx := getAuthDetails(cmd)
+
+		accountId = getAccountId(accountId, client, ctx)
+
+		folderId, err := cmd.Flags().GetString("folder")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		folderId = getFolderId(accountId, folderId, client, ctx)
+
+		payload := zmail.NewFolderUpdatePayload(zmail.MARK_AS_READ)
+		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
+		if err != nil {
+			handleClientReqError(httpResp, err)
+		}
+	},
+}
+
+var folderEmptyCmd = &cobra.Command{
+	Use:   "empty",
+	Short: "Empty folder",
+	Long:  "Empty folder",
+	Run: func(cmd *cobra.Command, args []string) {
+		accountId, err := cmd.Flags().GetString("account")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+
+		client, ctx := getAuthDetails(cmd)
+
+		accountId = getAccountId(accountId, client, ctx)
+
+		folderId, err := cmd.Flags().GetString("folder")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		folderId = getFolderId(accountId, folderId, client, ctx)
+
+		payload := zmail.NewFolderUpdatePayload(zmail.EMPTY_FOLDER)
+		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
+		if err != nil {
+			handleClientReqError(httpResp, err)
+		}
+	},
+}
+
+var folderDeleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "Delete folder",
+	Long:  "Delete folder",
+	Run: func(cmd *cobra.Command, args []string) {
+		accountId, err := cmd.Flags().GetString("account")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+
+		client, ctx := getAuthDetails(cmd)
+
+		accountId = getAccountId(accountId, client, ctx)
+
+		folderId, err := cmd.Flags().GetString("folder")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		folderId = getFolderId(accountId, folderId, client, ctx)
+
+		_, httpResp, err := client.FoldersAPI.DeleteFolder(ctx, accountId, folderId).Execute()
+		if err != nil {
+			handleClientReqError(httpResp, err)
+		}
+	},
+}
+
 func getFolderId(accountId string, folderId string, client *zmail.APIClient, ctx context.Context) string {
 	newFolderId := ""
 	if folderId == "" || !utils.IsNumber(folderId) {
@@ -255,6 +338,9 @@ func init() {
 	folderCmd.AddCommand(folderRenameCmd)
 	folderCmd.AddCommand(folderEnableImapCmd)
 	folderCmd.AddCommand(folderDisableImapCmd)
+	folderCmd.AddCommand(folderReadCmd)
+	folderCmd.AddCommand(folderEmptyCmd)
+	folderCmd.AddCommand(folderDeleteCmd)
 
 	folderCmd.PersistentFlags().String("account", "", "Account Id (Can be id or the account's name)")
 
@@ -266,7 +352,14 @@ func init() {
 	folderRenameCmd.PersistentFlags().String("name", "", "New folder name")
 
 	folderEnableImapCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
+
 	folderDisableImapCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
+
+	folderReadCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
+
+	folderEmptyCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
+
+	folderDeleteCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
 
 	rootCmd.AddCommand(folderCmd)
 }
