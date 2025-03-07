@@ -165,9 +165,10 @@ var folderRenameCmd = &cobra.Command{
 }
 
 var folderEnableImapCmd = &cobra.Command{
-	Use:   "enable-imap",
-	Short: "Enables imap view",
-	Long:  "Enables imap view",
+	Use:    "enable-imap",
+	Short:  "Enables imap view",
+	Long:   "Enables imap view",
+	PreRun: ResetPreviousOutput,
 	Run: func(cmd *cobra.Command, args []string) {
 		accountId, err := cmd.Flags().GetString("account")
 		if err != nil {
@@ -193,9 +194,10 @@ var folderEnableImapCmd = &cobra.Command{
 }
 
 var folderDisableImapCmd = &cobra.Command{
-	Use:   "disable-imap",
-	Short: "Disable imap view",
-	Long:  "Disable imap view",
+	Use:    "disable-imap",
+	Short:  "Disable imap view",
+	Long:   "Disable imap view",
+	PreRun: ResetPreviousOutput,
 	Run: func(cmd *cobra.Command, args []string) {
 		accountId, err := cmd.Flags().GetString("account")
 		if err != nil {
@@ -221,9 +223,10 @@ var folderDisableImapCmd = &cobra.Command{
 }
 
 var folderReadCmd = &cobra.Command{
-	Use:   "read",
-	Short: "Mark as Read folder",
-	Long:  "Mark as Read folder",
+	Use:    "read",
+	Short:  "Mark as Read folder",
+	Long:   "Mark as Read folder",
+	PreRun: ResetPreviousOutput,
 	Run: func(cmd *cobra.Command, args []string) {
 		accountId, err := cmd.Flags().GetString("account")
 		if err != nil {
@@ -249,9 +252,10 @@ var folderReadCmd = &cobra.Command{
 }
 
 var folderEmptyCmd = &cobra.Command{
-	Use:   "empty",
-	Short: "Empty folder",
-	Long:  "Empty folder",
+	Use:    "empty",
+	Short:  "Empty folder",
+	Long:   "Empty folder",
+	PreRun: ResetPreviousOutput,
 	Run: func(cmd *cobra.Command, args []string) {
 		accountId, err := cmd.Flags().GetString("account")
 		if err != nil {
@@ -277,9 +281,10 @@ var folderEmptyCmd = &cobra.Command{
 }
 
 var folderDeleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Delete folder",
-	Long:  "Delete folder",
+	Use:    "delete",
+	Short:  "Delete folder",
+	Long:   "Delete folder",
+	PreRun: ResetPreviousOutput,
 	Run: func(cmd *cobra.Command, args []string) {
 		accountId, err := cmd.Flags().GetString("account")
 		if err != nil {
