@@ -98,8 +98,8 @@ var folderMoveCmd = &cobra.Command{
 			if parentFolderId != "" {
 				payload.SetParentFolderId(parentFolderId)
 			} else {
-        cobra.CheckErr(errors.New("Invalid parent folder given"))
-      }
+				cobra.CheckErr(errors.New("Invalid parent folder given"))
+			}
 		}
 
 		if previousFolderId != "" {
@@ -107,13 +107,55 @@ var folderMoveCmd = &cobra.Command{
 			if previousFolderId != "" {
 				payload.SetPreviousFolderId(previousFolderId)
 			} else {
-        cobra.CheckErr(errors.New("Invalid previous folder given"))
-      }
+				cobra.CheckErr(errors.New("Invalid previous folder given"))
+			}
 		}
 
 		if parentFolderId == "" && previousFolderId == "" {
 			cobra.CheckErr(errors.New("--parent-folder or --previous-folder is required"))
 		}
+
+		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
+		if err != nil {
+			handleClientReqError(httpResp, err)
+		}
+	},
+}
+
+var folderRenameCmd = &cobra.Command{
+	Use:    "rename",
+	Short:  "Rename a folder",
+	Long:   "Rename a folder",
+	PreRun: ResetPreviousOutput,
+	Run: func(cmd *cobra.Command, args []string) {
+		accountId, err := cmd.Flags().GetString("account")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+
+		client, ctx := getAuthDetails(cmd)
+
+		accountId = getAccountId(accountId, client, ctx)
+
+		folderId, err := cmd.Flags().GetString("folder")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		folderId = getFolderId(accountId, folderId, client, ctx)
+
+		folderName, err := cmd.Flags().GetString("name")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		if folderName == "" {
+			folderName, err = pterm.DefaultInteractiveTextInput.WithDefaultValue("Renamed").Show()
+			if err != nil {
+				cobra.CheckErr(err)
+			}
+		}
+
+		payload := zmail.NewFolderUpdatePayload(zmail.RENAME)
+		payload.SetFolderName(folderName)
 
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
@@ -154,12 +196,16 @@ func getFolderId(accountId string, folderId string, client *zmail.APIClient, ctx
 func init() {
 	folderCmd.AddCommand(folderListCmd)
 	folderCmd.AddCommand(folderMoveCmd)
+	folderCmd.AddCommand(folderRenameCmd)
 
 	folderCmd.PersistentFlags().String("account", "", "Account Id (Can be id or the account's name)")
 
 	folderMoveCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
 	folderMoveCmd.PersistentFlags().String("parent-folder", "", "Parent Folder (Can be id or the folder's path)")
 	folderMoveCmd.PersistentFlags().String("previous-folder", "", "Previous Folder (Can be id or the folder's path)")
+
+	folderRenameCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
+	folderRenameCmd.PersistentFlags().String("name", "", "New folder name")
 
 	rootCmd.AddCommand(folderCmd)
 }
