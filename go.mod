@@ -7,7 +7,7 @@ require (
 	github.com/reeflective/console v0.1.22
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
-	github.com/vigneshwaran-48/zmail-go-sdk v0.0.1
+	github.com/vigneshwaran-48/zmail-go-sdk v0.0.2
 	golang.org/x/oauth2 v0.28.0
 )
 

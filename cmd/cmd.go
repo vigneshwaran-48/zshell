@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
 	"strings"
 
 	"github.com/reeflective/console"
@@ -155,4 +158,13 @@ func hasVariables(command []string) bool {
 		}
 	}
 	return false
+}
+
+func handleClientReqError(httpResp *http.Response, err error) {
+	bodyStr, err := io.ReadAll(httpResp.Body)
+	if err != nil {
+		cobra.CheckErr(err)
+	}
+	fmt.Println(string(bodyStr))
+	cobra.CheckErr(err)
 }
