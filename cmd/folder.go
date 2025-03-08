@@ -316,6 +316,66 @@ var folderDeleteCmd = &cobra.Command{
 	},
 }
 
+var folderCreateCmd = &cobra.Command{
+	Use:    "create",
+	Short:  "Create a folder",
+	Long:   "Create a folder",
+	PreRun: ResetPreviousOutput,
+	Run: func(cmd *cobra.Command, args []string) {
+		accountId, err := cmd.Flags().GetString("account")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+
+		client, ctx := getAuthDetails(cmd)
+
+		accountId = getAccountId(accountId, client, ctx)
+
+		name, err := cmd.Flags().GetString("name")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		if name == "" {
+			name, err = pterm.DefaultInteractiveTextInput.WithDefaultText("Folder Name").Show()
+			if err != nil {
+				cobra.CheckErr(err)
+			}
+			if name == "" {
+				cobra.CheckErr(errors.New("'name' is required"))
+			}
+		}
+		payload := zmail.NewCreateFolderRequest(name)
+
+		parentFolderId, err := cmd.Flags().GetString("parent-folder")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+
+		if parentFolderId != "" {
+			parentFolderId = getFolderId(accountId, parentFolderId, client, ctx)
+			if parentFolderId != "" {
+				payload.SetParentFolderId(parentFolderId)
+			} else {
+				cobra.CheckErr(errors.New("Invalid parent folder given"))
+			}
+		}
+
+		parentFolderPath, err := cmd.Flags().GetString("parent-path")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+
+		if parentFolderPath != "" {
+			payload.SetParentFolderPath(parentFolderPath)
+		}
+
+		_, httpResp, err := client.FoldersAPI.CreateFolder(ctx, accountId).CreateFolderRequest(*payload).Execute()
+		if err != nil {
+			handleClientReqError(httpResp, err)
+		}
+	},
+}
+
 func getFolderId(accountId string, folderId string, client *zmail.APIClient, ctx context.Context) string {
 	newFolderId := ""
 	if folderId == "" || !utils.IsNumber(folderId) {
@@ -354,6 +414,7 @@ func init() {
 	folderCmd.AddCommand(folderReadCmd)
 	folderCmd.AddCommand(folderEmptyCmd)
 	folderCmd.AddCommand(folderDeleteCmd)
+	folderCmd.AddCommand(folderCreateCmd)
 
 	folderCmd.PersistentFlags().String("account", "", "Account Id (Can be id or the account's name)")
 
@@ -373,6 +434,10 @@ func init() {
 	folderEmptyCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
 
 	folderDeleteCmd.PersistentFlags().String("folder", "", "Folder (Can be id or the folder's path)")
+
+	folderCreateCmd.PersistentFlags().String("name", "", "Folder name")
+	folderCreateCmd.PersistentFlags().String("parent-folder", "", "Parent folder (Can be id or the folder's path)")
+	folderCreateCmd.PersistentFlags().String("parent-path", "", "Parent folder path")
 
 	rootCmd.AddCommand(folderCmd)
 }
