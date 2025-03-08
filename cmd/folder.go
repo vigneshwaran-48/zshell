@@ -36,6 +36,7 @@ var folderListCmd = &cobra.Command{
 		foldersResponse, httpResp, err := client.FoldersAPI.GetAllFolders(ctx, accountId).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
+      return
 		}
 
 		var rows []map[string]string
@@ -118,6 +119,7 @@ var folderMoveCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
+      return
 		}
 	},
 }
@@ -160,6 +162,7 @@ var folderRenameCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
+      return
 		}
 	},
 }
@@ -189,6 +192,7 @@ var folderEnableImapCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
+      return
 		}
 	},
 }
@@ -218,6 +222,7 @@ var folderDisableImapCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
+      return
 		}
 	},
 }
@@ -247,6 +252,7 @@ var folderReadCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
+      return
 		}
 	},
 }
@@ -276,6 +282,7 @@ var folderEmptyCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
+      return
 		}
 	},
 }
@@ -304,6 +311,7 @@ var folderDeleteCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.DeleteFolder(ctx, accountId, folderId).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
+      return
 		}
 	},
 }

@@ -206,14 +206,14 @@ func AddAuth(dcName string, refreshToken string) (*Auth, error) {
 
 func GetAllAuths() ([]Auth, error) {
 	authFilePath, err := GetAuthDataFile()
+	if err != nil {
+		return nil, nil
+	}
 	if !IsFileExists(authFilePath) {
 		err = CreateDefaultData()
 		if err != nil {
 			return nil, err
 		}
-	}
-	if err != nil {
-		return nil, nil
 	}
 	data, err := os.ReadFile(authFilePath)
 	if err != nil {
