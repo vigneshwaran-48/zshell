@@ -6,6 +6,7 @@ var headCmd = &cobra.Command{
 	Use:  "head",
 	Long: "Fetch the first n number of previous result rows",
 	Run: func(cmd *cobra.Command, args []string) {
+    lastCmdResult := GetLastCmdResult()
 		if lastCmdResult == nil {
 			return
 		}
