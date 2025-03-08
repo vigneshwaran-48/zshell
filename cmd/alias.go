@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/kballard/go-shellquote"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/vigneshwaran-48/zshell/models"
@@ -120,11 +119,7 @@ var aliasRemoveCmd = &cobra.Command{
 		if err != nil {
 			cobra.CheckErr(err)
 		}
-		splittedArgs, err := shellquote.Split(alias.Command)
-		if err != nil {
-			cobra.CheckErr(err)
-		}
-		customCmd, _, err := rootCmd.Find(splittedArgs)
+		customCmd, _, err := rootCmd.Find([]string{alias.Name})
 		if err != nil {
 			cobra.CheckErr(err)
 		}

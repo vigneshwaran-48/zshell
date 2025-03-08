@@ -56,6 +56,9 @@ func GetLastCmdResult() *CmdResult {
 
 func StartInteractiveShell() {
 	app = console.New("ZShell")
+	prompt := app.Menu("").Prompt()
+	prompt.Primary = func() string { return "zshell >" }
+
 	// This hook will run every time when command is executed that includes command executed with ActiveMenu().RunCommandArgs
 	app.PostCmdRunHooks = []func() error{
 		postHook,
