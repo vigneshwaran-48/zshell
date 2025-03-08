@@ -79,6 +79,21 @@ func FindAllAlias() ([]models.Alias, error) {
 	return aliases, nil
 }
 
+func RemoveAlias(name string) error {
+	aliases, err := FindAllAlias()
+	if err != nil {
+		return err
+	}
+	aliases = utils.Filter(aliases, func(alias models.Alias) bool {
+		return alias.Name != name
+	})
+	err = storeAliases(aliases)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func storeAlias(alias *models.Alias) error {
 	if alias == nil {
 		return errors.New("alias is required")
@@ -88,6 +103,14 @@ func storeAlias(alias *models.Alias) error {
 		return err
 	}
 	aliases = append(aliases, *alias)
+	err = storeAliases(aliases)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func storeAliases(aliases []models.Alias) error {
 	data, err := json.Marshal(aliases)
 	if err != nil {
 		return err

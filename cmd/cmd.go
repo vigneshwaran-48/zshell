@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/kballard/go-shellquote"
 	"github.com/reeflective/console"
 	"github.com/spf13/cobra"
 	"github.com/vigneshwaran-48/zmail-go-sdk"
@@ -40,58 +41,78 @@ func StartInteractiveShell() {
 	app = console.New("ZShell")
 	// This hook will run every time when command is executed that includes command executed with ActiveMenu().RunCommandArgs
 	app.PostCmdRunHooks = []func() error{
-		func() error {
-			if len(remainingCmds) > 0 {
-				formattedCmds := formatCommand(remainingCmds)
-				if len(formattedCmds) > 1 {
-					remainingCmds = formattedCmds[1]
-				} else {
-					remainingCmds = []string{} // Reached the end, Reset the remaining command
-				}
-
-				cmdToRun := formattedCmds[0]
-				previousCmd = cmdToRun
-
-				if lastCmdResult != nil && hasVariables(cmdToRun) {
-					var headers []string
-					headers = append(headers, lastCmdResult.header...)
-					for _, row := range lastCmdResult.rows {
-						var currCmd []string
-						currCmd = append(currCmd, cmdToRun...)
-
-						for i := range currCmd {
-							token := &currCmd[i]
-							if strings.HasPrefix(*token, "$") && isVariableExists(headers, (*token)[1:]) {
-								*token = row[(*token)[1:]]
-							}
-						}
-						app.ActiveMenu().RunCommandArgs(context.Background(), currCmd)
-					}
-				} else {
-					app.ActiveMenu().RunCommandArgs(context.Background(), cmdToRun)
-				}
-			} else {
-				if previousCmd[0] != "display" && previousCmd[0] != "help" {
-					displayCmd.Run(rootCmd, []string{})
-				}
-			}
-			return nil
-		},
+		postHook,
 	}
 	// This hook run only once when the user enters a command
 	app.PreCmdRunLineHooks = []func(args []string) ([]string, error){
-		func(args []string) ([]string, error) {
-			lastCmdResult = nil
-			formattedCmds := formatCommand(args)
-			if len(formattedCmds) > 1 {
-				remainingCmds = formattedCmds[1]
-			}
-			previousCmd = formattedCmds[0]
-			return formattedCmds[0], nil
-		},
+		preHook,
 	}
 	app.ActiveMenu().SetCommands(GetCmds)
 	app.Start()
+}
+
+func RunCustomCommand(command string) error {
+	args, err := shellquote.Split(command)
+	if err != nil {
+		return err
+	}
+	args, err = preHook(args)
+	if err != nil {
+		return err
+	}
+	// Setting up command piping logic with the preHook. Then running the RunCommandArgs will take care of
+	// rest of the piping logic with the post it has.
+	app.ActiveMenu().RunCommandArgs(context.Background(), args)
+	return nil
+}
+
+func postHook() error {
+	if len(remainingCmds) > 0 {
+		formattedCmds := formatCommand(remainingCmds)
+		if len(formattedCmds) > 1 {
+			remainingCmds = formattedCmds[1]
+		} else {
+			remainingCmds = []string{} // Reached the end, Reset the remaining command
+		}
+
+		cmdToRun := formattedCmds[0]
+		previousCmd = cmdToRun
+
+		if lastCmdResult != nil && hasVariables(cmdToRun) {
+			var headers []string
+			headers = append(headers, lastCmdResult.header...)
+			for _, row := range lastCmdResult.rows {
+				var currCmd []string
+				currCmd = append(currCmd, cmdToRun...)
+
+				for i := range currCmd {
+					token := &currCmd[i]
+					if strings.HasPrefix(*token, "$") && isVariableExists(headers, (*token)[1:]) {
+						*token = row[(*token)[1:]]
+					}
+				}
+				app.ActiveMenu().RunCommandArgs(context.Background(), currCmd)
+			}
+		} else {
+			app.ActiveMenu().RunCommandArgs(context.Background(), cmdToRun)
+		}
+	} else {
+		if previousCmd[0] != "display" && previousCmd[0] != "help" {
+			displayCmd.Run(rootCmd, []string{})
+			lastCmdResult = nil // Resetting lastCmdResult.
+		}
+	}
+	return nil
+}
+
+func preHook(args []string) ([]string, error) {
+	lastCmdResult = nil
+	formattedCmds := formatCommand(args)
+	if len(formattedCmds) > 1 {
+		remainingCmds = formattedCmds[1]
+	}
+	previousCmd = formattedCmds[0]
+	return formattedCmds[0], nil
 }
 
 // Get the first command as one group and rest of them as another group

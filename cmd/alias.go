@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
+	"github.com/kballard/go-shellquote"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/vigneshwaran-48/zshell/models"
@@ -14,7 +17,7 @@ var aliasCmd = &cobra.Command{
 	PreRun: ResetPreviousOutput,
 }
 
-var aliasCreatCmd = &cobra.Command{
+var aliasCreateCmd = &cobra.Command{
 	Use:    "create",
 	Short:  "Create a alias",
 	Long:   "Store custom commands as alias to the given name",
@@ -44,6 +47,19 @@ var aliasCreatCmd = &cobra.Command{
 		if err != nil {
 			cobra.CheckErr(err)
 		}
+		existingAliasWithCmd, err := service.FindByCommand(command)
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		if existingAliasWithCmd != nil {
+			confirm, err := pterm.DefaultInteractiveConfirm.WithDefaultText(fmt.Sprintf("Alias '%s' already exists with the same command, Do you want to continue?", existingAliasWithCmd.Name)).Show()
+			if err != nil {
+				cobra.CheckErr(err)
+			}
+			if !confirm {
+				return
+			}
+		}
 		alias := &models.Alias{
 			Name:        name,
 			Command:     command,
@@ -53,6 +69,7 @@ var aliasCreatCmd = &cobra.Command{
 		if err != nil {
 			cobra.CheckErr(err)
 		}
+		addAliasToRootCmd(alias)
 	},
 }
 
@@ -81,13 +98,72 @@ var aliasListCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	aliasCreatCmd.PersistentFlags().String("name", "", "Name of the alias")
-	aliasCreatCmd.PersistentFlags().String("command", "", "Command to be aliased")
-	aliasCreatCmd.PersistentFlags().String("description", "", "Description of the alias")
+var aliasRemoveCmd = &cobra.Command{
+	Use:    "remove",
+	Short:  "Remove alias command",
+	Long:   "Remove alias command",
+	PreRun: ResetPreviousOutput,
+	Run: func(cmd *cobra.Command, args []string) {
+		name, err := cmd.Flags().GetString("name")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		alias, err := service.FindAliasByName(name)
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		if alias == nil {
+			cobra.CheckErr(fmt.Errorf("Given alias command '%s' not exists", name))
+		}
+		err = service.RemoveAlias(name)
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		splittedArgs, err := shellquote.Split(alias.Command)
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		customCmd, _, err := rootCmd.Find(splittedArgs)
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		rootCmd.RemoveCommand(customCmd)
+	},
+}
 
-	aliasCmd.AddCommand(aliasCreatCmd)
+func addAliasToRootCmd(alias *models.Alias) {
+	customAliasCmd := &cobra.Command{
+		Use:   alias.Name,
+		Short: alias.Description,
+		Long:  alias.Description,
+		Run: func(cmd *cobra.Command, args []string) {
+			err := RunCustomCommand(alias.Command)
+			if err != nil {
+				cobra.CheckErr(err)
+			}
+		},
+	}
+	rootCmd.AddCommand(customAliasCmd)
+}
+
+func init() {
+	aliasCreateCmd.PersistentFlags().String("name", "", "Name of the alias")
+	aliasCreateCmd.PersistentFlags().String("command", "", "Command to be aliased")
+	aliasCreateCmd.PersistentFlags().String("description", "", "Description of the alias")
+
+	aliasRemoveCmd.PersistentFlags().String("name", "", "Name of the alias to be removed")
+
+	aliasCmd.AddCommand(aliasCreateCmd)
 	aliasCmd.AddCommand(aliasListCmd)
+	aliasCmd.AddCommand(aliasRemoveCmd)
+
+	aliases, err := service.FindAllAlias()
+	if err != nil {
+		cobra.CheckErr(err)
+	}
+	for _, alias := range aliases {
+		addAliasToRootCmd(&alias)
+	}
 
 	rootCmd.AddCommand(aliasCmd)
 }
