@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/vigneshwaran-48/zshell/models"
@@ -44,6 +46,19 @@ var aliasCreatCmd = &cobra.Command{
 		if err != nil {
 			cobra.CheckErr(err)
 		}
+		existingAliasWithCmd, err := service.FindByCommand(command)
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		if existingAliasWithCmd != nil {
+			confirm, err := pterm.DefaultInteractiveConfirm.WithDefaultText(fmt.Sprintf("Alias '%s' already exists with the same command, Do you want to continue?", existingAliasWithCmd.Name)).Show()
+			if err != nil {
+				cobra.CheckErr(err)
+			}
+			if !confirm {
+				return
+			}
+		}
 		alias := &models.Alias{
 			Name:        name,
 			Command:     command,
@@ -53,6 +68,7 @@ var aliasCreatCmd = &cobra.Command{
 		if err != nil {
 			cobra.CheckErr(err)
 		}
+		addAliasToRootCmd(alias)
 	},
 }
 
@@ -81,6 +97,21 @@ var aliasListCmd = &cobra.Command{
 	},
 }
 
+func addAliasToRootCmd(alias *models.Alias) {
+	customAliasCmd := &cobra.Command{
+		Use:   alias.Name,
+		Short: alias.Description,
+		Long:  alias.Description,
+		Run: func(cmd *cobra.Command, args []string) {
+			err := RunCustomCommand(alias.Command)
+			if err != nil {
+				cobra.CheckErr(err)
+			}
+		},
+	}
+	rootCmd.AddCommand(customAliasCmd)
+}
+
 func init() {
 	aliasCreatCmd.PersistentFlags().String("name", "", "Name of the alias")
 	aliasCreatCmd.PersistentFlags().String("command", "", "Command to be aliased")
@@ -88,6 +119,14 @@ func init() {
 
 	aliasCmd.AddCommand(aliasCreatCmd)
 	aliasCmd.AddCommand(aliasListCmd)
+
+	aliases, err := service.FindAllAlias()
+	if err != nil {
+		cobra.CheckErr(err)
+	}
+	for _, alias := range aliases {
+		addAliasToRootCmd(&alias)
+	}
 
 	rootCmd.AddCommand(aliasCmd)
 }
