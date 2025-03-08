@@ -29,7 +29,7 @@ var accountList = &cobra.Command{
 		accountsResp, httpResp, err := req.Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
-      return
+			return
 		}
 		var rows []map[string]string
 		for _, account := range accountsResp.Data {
@@ -40,10 +40,10 @@ var accountList = &cobra.Command{
 			}
 			rows = append(rows, row)
 		}
-		lastCmdResult = &CmdResult{
+		SetLastCommandResult(&CmdResult{
 			header: []string{"Account Id", "Account Name", "Email"},
 			rows:   rows,
-		}
+		})
 	},
 }
 

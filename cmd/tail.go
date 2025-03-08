@@ -1,11 +1,14 @@
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+)
 
 var tailCmd = &cobra.Command{
 	Use:  "tail",
 	Long: "Fetch the last n number of previous result rows",
 	Run: func(cmd *cobra.Command, args []string) {
+		lastCmdResult := GetLastCmdResult()
 		if lastCmdResult == nil {
 			return
 		}

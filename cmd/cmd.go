@@ -15,6 +15,14 @@ import (
 	"golang.org/x/oauth2"
 )
 
+type ctxKey int
+
+var lastCmdResultKey ctxKey = 0
+
+var remainingCmdsKey ctxKey = 1
+
+var isAliasCmdExecutionKey ctxKey = 2
+
 type CmdResult struct {
 	header []string
 	rows   []map[string]string
@@ -22,11 +30,7 @@ type CmdResult struct {
 
 var app *console.Console
 
-var remainingCmds []string
-
 var previousCmd []string
-
-var lastCmdResult *CmdResult
 
 func GetCmds() *cobra.Command {
 	return rootCmd
@@ -34,7 +38,20 @@ func GetCmds() *cobra.Command {
 
 // All commands which is not dependant on previous command result can use this as a PreRun hook in the cobra command definition.
 func ResetPreviousOutput(cmd *cobra.Command, args []string) {
-	lastCmdResult = nil
+	SetLastCommandResult(nil)
+}
+
+func SetLastCommandResult(lastCmdResult *CmdResult) {
+	ctx := context.WithValue(app.ActiveMenu().Context(), lastCmdResultKey, lastCmdResult)
+	app.ActiveMenu().SetContext(ctx)
+}
+
+func GetLastCmdResult() *CmdResult {
+	value := app.ActiveMenu().Context().Value(lastCmdResultKey)
+	if value != nil {
+		return value.(*CmdResult)
+	}
+	return nil
 }
 
 func StartInteractiveShell() {
@@ -56,17 +73,26 @@ func RunCustomCommand(command string) error {
 	if err != nil {
 		return err
 	}
-	args, err = preHook(args)
-	if err != nil {
-		return err
+	previousCtx := app.ActiveMenu().Context()
+	formattedCmds := formatCommand(args)
+
+	var remainingCmds []string = nil
+	if len(formattedCmds) > 1 {
+		remainingCmds = formattedCmds[1]
 	}
-	// Setting up command piping logic with the preHook. Then running the RunCommandArgs will take care of
-	// rest of the piping logic with the post it has.
-	app.ActiveMenu().RunCommandArgs(context.Background(), args)
+
+	ctx := context.WithValue(context.Background(), remainingCmdsKey, remainingCmds)
+
+	app.ActiveMenu().RunCommandArgs(context.WithValue(ctx, isAliasCmdExecutionKey, true), formattedCmds[0])
+
+	app.ActiveMenu().SetContext(context.WithValue(previousCtx, lastCmdResultKey, app.ActiveMenu().Context().Value(lastCmdResultKey)))
+
 	return nil
 }
 
 func postHook() error {
+	remainingCmds := getRemainingCmds()
+	ctx := context.WithValue(context.Background(), isAliasCmdExecutionKey, app.ActiveMenu().Context().Value(isAliasCmdExecutionKey))
 	if len(remainingCmds) > 0 {
 		formattedCmds := formatCommand(remainingCmds)
 		if len(formattedCmds) > 1 {
@@ -74,9 +100,12 @@ func postHook() error {
 		} else {
 			remainingCmds = []string{} // Reached the end, Reset the remaining command
 		}
+		ctx = context.WithValue(ctx, remainingCmdsKey, remainingCmds)
 
 		cmdToRun := formattedCmds[0]
 		previousCmd = cmdToRun
+
+		lastCmdResult := GetLastCmdResult()
 
 		if lastCmdResult != nil && hasVariables(cmdToRun) {
 			var headers []string
@@ -91,28 +120,34 @@ func postHook() error {
 						*token = row[(*token)[1:]]
 					}
 				}
-				app.ActiveMenu().RunCommandArgs(context.Background(), currCmd)
+				ctx = context.WithValue(ctx, lastCmdResultKey, lastCmdResult)
+				app.ActiveMenu().RunCommandArgs(ctx, currCmd)
 			}
 		} else {
-			app.ActiveMenu().RunCommandArgs(context.Background(), cmdToRun)
+			ctx = context.WithValue(ctx, lastCmdResultKey, lastCmdResult)
+			app.ActiveMenu().RunCommandArgs(ctx, cmdToRun)
 		}
 	} else {
-		if previousCmd[0] != "display" && previousCmd[0] != "help" {
+		// If it is a alias command execution let the display command to be ran in the alias's context instead of here.
+		if app.ActiveMenu().Context().Value(isAliasCmdExecutionKey) == nil && previousCmd[0] != "display" && previousCmd[0] != "help" {
 			displayCmd.Run(rootCmd, []string{})
-			lastCmdResult = nil // Resetting lastCmdResult.
 		}
 	}
 	return nil
 }
 
 func preHook(args []string) ([]string, error) {
-	lastCmdResult = nil
+	ctx := context.Background()
 	formattedCmds := formatCommand(args)
 	if len(formattedCmds) > 1 {
-		remainingCmds = formattedCmds[1]
+		remainingCmds := formattedCmds[1]
+		ctx = context.WithValue(ctx, remainingCmdsKey, remainingCmds)
+		app.ActiveMenu().RunCommandArgs(ctx, formattedCmds[0])
+		return []string{"noop"}, nil
+	} else {
+		previousCmd = formattedCmds[0]
+		return formattedCmds[0], nil
 	}
-	previousCmd = formattedCmds[0]
-	return formattedCmds[0], nil
 }
 
 // Get the first command as one group and rest of them as another group
@@ -170,6 +205,7 @@ func getAuthDetails(cmd *cobra.Command) (*zmail.APIClient, context.Context) {
 }
 
 func hasVariables(command []string) bool {
+	lastCmdResult := GetLastCmdResult()
 	if lastCmdResult == nil || len(lastCmdResult.rows) == 0 {
 		return false
 	}
@@ -188,4 +224,12 @@ func handleClientReqError(httpResp *http.Response, err error) {
 	}
 	fmt.Println(string(bodyStr))
 	cobra.CheckErr(err)
+}
+
+func getRemainingCmds() []string {
+	remainingCmds := app.ActiveMenu().Context().Value(remainingCmdsKey)
+	if remainingCmds != nil {
+		return remainingCmds.([]string)
+	}
+	return nil
 }

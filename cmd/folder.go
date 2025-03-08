@@ -36,7 +36,7 @@ var folderListCmd = &cobra.Command{
 		foldersResponse, httpResp, err := client.FoldersAPI.GetAllFolders(ctx, accountId).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
-      return
+			return
 		}
 
 		var rows []map[string]string
@@ -54,10 +54,10 @@ var folderListCmd = &cobra.Command{
 			})
 		}
 
-		lastCmdResult = &CmdResult{
+		SetLastCommandResult(&CmdResult{
 			header: []string{"Folder Id", "Folder Name", "Type", "Path", "Previous Folder"},
 			rows:   rows,
-		}
+		})
 	},
 }
 
@@ -119,7 +119,7 @@ var folderMoveCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
-      return
+			return
 		}
 	},
 }
@@ -162,7 +162,7 @@ var folderRenameCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
-      return
+			return
 		}
 	},
 }
@@ -192,7 +192,7 @@ var folderEnableImapCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
-      return
+			return
 		}
 	},
 }
@@ -222,7 +222,7 @@ var folderDisableImapCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
-      return
+			return
 		}
 	},
 }
@@ -252,7 +252,7 @@ var folderReadCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
-      return
+			return
 		}
 	},
 }
@@ -282,7 +282,7 @@ var folderEmptyCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
-      return
+			return
 		}
 	},
 }
@@ -311,7 +311,7 @@ var folderDeleteCmd = &cobra.Command{
 		_, httpResp, err := client.FoldersAPI.DeleteFolder(ctx, accountId, folderId).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
-      return
+			return
 		}
 	},
 }

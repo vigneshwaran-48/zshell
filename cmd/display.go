@@ -10,6 +10,7 @@ var displayCmd = &cobra.Command{
 	Short: "Display last command output",
 	Long:  "Display last command output",
 	Run: func(cmd *cobra.Command, args []string) {
+		lastCmdResult := GetLastCmdResult()
 		if lastCmdResult == nil {
 			return
 		}

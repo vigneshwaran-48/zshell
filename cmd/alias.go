@@ -83,7 +83,7 @@ var aliasListCmd = &cobra.Command{
 		if err != nil {
 			cobra.CheckErr(err)
 		}
-		lastCmdResult = &CmdResult{
+		lastCmdResult := &CmdResult{
 			header: []string{"Name", "Command", "Description"},
 		}
 		var rows []map[string]string
@@ -95,6 +95,7 @@ var aliasListCmd = &cobra.Command{
 			})
 		}
 		lastCmdResult.rows = rows
+		SetLastCommandResult(lastCmdResult)
 	},
 }
 
