@@ -1,6 +1,9 @@
 package utils
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 func IsNumber(value string) bool {
 	if _, err := strconv.Atoi(value); err != nil {
@@ -36,4 +39,40 @@ func Contains[T comparable](ss []T, elementToFind T) bool {
 		}
 	}
 	return false
+}
+
+func BreakStringIntoLines(s string, lineLength int) string {
+	words := strings.Fields(s)
+	var lines []string
+	currentLine := ""
+
+	for _, word := range words {
+		if len(word) > lineLength {
+			// Handle long words by splitting them
+			for len(word) > lineLength {
+				lines = append(lines, word[:lineLength])
+				word = word[lineLength:]
+			}
+			if len(word) > 0 {
+				if currentLine != "" {
+					lines = append(lines, currentLine)
+				}
+				currentLine = word
+			}
+		} else if len(currentLine)+len(word)+1 <= lineLength {
+			if currentLine != "" {
+				currentLine += " "
+			}
+			currentLine += word
+		} else {
+			lines = append(lines, currentLine)
+			currentLine = word
+		}
+	}
+
+	if currentLine != "" {
+		lines = append(lines, currentLine)
+	}
+
+	return strings.Join(lines, "\n")
 }
