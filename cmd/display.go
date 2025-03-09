@@ -14,6 +14,10 @@ var displayCmd = &cobra.Command{
 		if lastCmdResult == nil {
 			return
 		}
+		if lastCmdResult.customDisplayHook != nil {
+			lastCmdResult.customDisplayHook(lastCmdResult.header, lastCmdResult.rows)
+			return
+		}
 		table := pterm.TableData{
 			lastCmdResult.header,
 		}

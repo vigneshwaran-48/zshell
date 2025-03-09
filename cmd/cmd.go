@@ -24,8 +24,9 @@ var remainingCmdsKey ctxKey = 1
 var isAliasCmdExecutionKey ctxKey = 2
 
 type CmdResult struct {
-	header []string
-	rows   []map[string]string
+	header            []string
+	rows              []map[string]string
+	customDisplayHook func(header []string, rows []map[string]string)
 }
 
 var app *console.Console
@@ -221,6 +222,10 @@ func hasVariables(command []string) bool {
 }
 
 func handleClientReqError(httpResp *http.Response, err error) {
+	if httpResp == nil {
+		cobra.CheckErr(err)
+		return
+	}
 	bodyStr, err := io.ReadAll(httpResp.Body)
 	if err != nil {
 		cobra.CheckErr(err)
