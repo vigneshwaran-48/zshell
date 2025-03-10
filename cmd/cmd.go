@@ -33,6 +33,8 @@ var app *console.Console
 
 var previousCmd []string
 
+var password string
+
 func GetCmds() *cobra.Command {
 	return rootCmd
 }
@@ -196,6 +198,10 @@ func getAuthDetails(cmd *cobra.Command) (*zmail.APIClient, context.Context) {
 	}
 
 	config := zmail.NewConfiguration()
+	serverIndex := getServerIndex(dcName, config.Servers)
+	if serverIndex == -1 {
+		cobra.CheckErr(fmt.Errorf("No server mapped for dc %s", dcName))
+	}
 	client := zmail.NewAPIClient(config)
 
 	token := &oauth2.Token{
@@ -205,6 +211,7 @@ func getAuthDetails(cmd *cobra.Command) (*zmail.APIClient, context.Context) {
 
 	tokenSource := oauth2.StaticTokenSource(token)
 	ctx := context.WithValue(context.Background(), zmail.ContextOAuth2, tokenSource)
+	ctx = context.WithValue(ctx, zmail.ContextServerIndex, serverIndex)
 	return client, ctx
 }
 
@@ -240,4 +247,13 @@ func getRemainingCmds() []string {
 		return remainingCmds.([]string)
 	}
 	return nil
+}
+
+func getServerIndex(dc string, configs []zmail.ServerConfiguration) int {
+	for i, config := range configs {
+		if fmt.Sprintf("https://mail.%s", dc) == config.URL {
+			return i
+		}
+	}
+	return -1
 }
