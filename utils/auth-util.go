@@ -54,7 +54,8 @@ func LoginToDC(dcName string) (string, error) {
 		return "", err
 	}
 	if auth != nil {
-		return "", fmt.Errorf("Already logged in %s", dcName)
+    // Already logged in
+		return "", nil
 	}
 	url := fmt.Sprintf("https://accounts.%s/oauth/v2/auth?client_id=%s&redirect_uri=%s&scope=%s&response_type=code&access_type=offline", dcName, viper.GetString(CLIENT_ID), viper.GetString(REDIRECT_URI), viper.GetString(SCOPE))
 	fmt.Printf("Open this url in your browser => %s\n", url)

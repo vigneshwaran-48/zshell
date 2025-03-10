@@ -8,7 +8,8 @@ require (
 	github.com/reeflective/console v0.1.22
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
-	github.com/vigneshwaran-48/zmail-go-sdk v0.0.6
+	github.com/vigneshwaran-48/zmail-go-sdk v0.0.8
+	golang.org/x/crypto v0.32.0
 	golang.org/x/oauth2 v0.28.0
 )
 

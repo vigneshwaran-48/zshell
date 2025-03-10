@@ -92,7 +92,7 @@ var folderMoveCmd = &cobra.Command{
 			cobra.CheckErr(err)
 		}
 
-		payload := zmail.NewFolderUpdatePayload(zmail.MOVE)
+		payload := zmail.NewFolderUpdatePayload(zmail.FOLDERUPDATEMODE_MOVE)
 
 		if parentFolderId != "" {
 			parentFolderId = getFolderId(accountId, parentFolderId, client, ctx)
@@ -156,7 +156,7 @@ var folderRenameCmd = &cobra.Command{
 			}
 		}
 
-		payload := zmail.NewFolderUpdatePayload(zmail.RENAME)
+		payload := zmail.NewFolderUpdatePayload(zmail.FOLDERUPDATEMODE_RENAME)
 		payload.SetFolderName(folderName)
 
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
@@ -188,7 +188,7 @@ var folderEnableImapCmd = &cobra.Command{
 		}
 		folderId = getFolderId(accountId, folderId, client, ctx)
 
-		payload := zmail.NewFolderUpdatePayload(zmail.SET_VIEWABLE_IN_IMAP)
+		payload := zmail.NewFolderUpdatePayload(zmail.FOLDERUPDATEMODE_SET_VIEWABLE_IN_IMAP)
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
@@ -218,7 +218,7 @@ var folderDisableImapCmd = &cobra.Command{
 		}
 		folderId = getFolderId(accountId, folderId, client, ctx)
 
-		payload := zmail.NewFolderUpdatePayload(zmail.REMOVE_VIEWABLE_IN_IMAP)
+		payload := zmail.NewFolderUpdatePayload(zmail.FOLDERUPDATEMODE_REMOVE_VIEWABLE_IN_IMAP)
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
@@ -248,7 +248,7 @@ var folderReadCmd = &cobra.Command{
 		}
 		folderId = getFolderId(accountId, folderId, client, ctx)
 
-		payload := zmail.NewFolderUpdatePayload(zmail.MARK_AS_READ)
+		payload := zmail.NewFolderUpdatePayload(zmail.FOLDERUPDATEMODE_MARK_AS_READ)
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)
@@ -278,7 +278,7 @@ var folderEmptyCmd = &cobra.Command{
 		}
 		folderId = getFolderId(accountId, folderId, client, ctx)
 
-		payload := zmail.NewFolderUpdatePayload(zmail.EMPTY_FOLDER)
+		payload := zmail.NewFolderUpdatePayload(zmail.FOLDERUPDATEMODE_EMPTY_FOLDER)
 		_, httpResp, err := client.FoldersAPI.UpdateFolder(ctx, accountId, folderId).FolderUpdatePayload(*payload).Execute()
 		if err != nil {
 			handleClientReqError(httpResp, err)

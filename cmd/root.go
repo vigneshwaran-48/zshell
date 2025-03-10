@@ -73,4 +73,6 @@ func init() {
 
 	rootCmd.PersistentFlags().String("dc", viper.GetString(utils.DEFAULT_DC), "Which dc to use like zoho.com, zoho.in, zoho.eu, etc")
 	rootCmd.PersistentFlags().Int64("account", 0, "Account Id")
+
+	rootCmd.Flags().String("password", "", "Password to encrypt/decrypt access tokens")
 }
