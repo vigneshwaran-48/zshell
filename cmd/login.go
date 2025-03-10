@@ -14,7 +14,7 @@ var login = &cobra.Command{
 		if err != nil {
 			cobra.CheckErr(err)
 		}
-		_, err = utils.LoginToDC(dcName)
+		_, err = utils.LoginToDC(dcName, password)
 		if err != nil {
 			cobra.CheckErr(err)
 		}
