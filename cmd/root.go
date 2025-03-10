@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/vigneshwaran-48/zshell/utils"
@@ -13,6 +15,36 @@ var rootCmd = &cobra.Command{
 	Use:     "zshell",
 	Version: "1.0",
 	Long:    "Zoho shell",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if cmd.Name() == "exit" {
+			return
+		}
+		if IsInteractiveMode() {
+			if password == "" {
+				pass, err := pterm.DefaultInteractiveTextInput.WithDefaultText("Enter password").WithMask("*").Show()
+				if err != nil {
+					cobra.CheckErr(err)
+				}
+				if pass == "" {
+					cobra.CheckErr(errors.New("'password' is required"))
+				}
+				password = pass
+			}
+			return
+		}
+		password, err := cmd.Flags().GetString("password")
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		if password == "" {
+			cobra.CheckErr(errors.New("'password' is required"))
+		}
+	},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		if !IsInteractiveMode() {
+			display()
+		}
+	},
 }
 
 func createDefaultConfig(path string) error {
@@ -73,6 +105,5 @@ func init() {
 
 	rootCmd.PersistentFlags().String("dc", viper.GetString(utils.DEFAULT_DC), "Which dc to use like zoho.com, zoho.in, zoho.eu, etc")
 	rootCmd.PersistentFlags().Int64("account", 0, "Account Id")
-
-	rootCmd.Flags().String("password", "", "Password to encrypt/decrypt access tokens")
+	rootCmd.PersistentFlags().String("password", "", "Password to encrypt/decrypt access tokens")
 }

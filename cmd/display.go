@@ -10,26 +10,30 @@ var displayCmd = &cobra.Command{
 	Short: "Display last command output",
 	Long:  "Display last command output",
 	Run: func(cmd *cobra.Command, args []string) {
-		lastCmdResult := GetLastCmdResult()
-		if lastCmdResult == nil {
-			return
-		}
-		if lastCmdResult.customDisplayHook != nil {
-			lastCmdResult.customDisplayHook(lastCmdResult.header, lastCmdResult.rows)
-			return
-		}
-		table := pterm.TableData{
-			lastCmdResult.header,
-		}
-		for _, row := range lastCmdResult.rows {
-			cols := []string{}
-			for _, header := range lastCmdResult.header {
-				cols = append(cols, row[header])
-			}
-			table = append(table, cols)
-		}
-		pterm.DefaultTable.WithHasHeader().WithBoxed().WithRowSeparator("-").WithHeaderRowSeparator("-").WithData(table).Render()
+		display()
 	},
+}
+
+func display() {
+	lastCmdResult := GetLastCmdResult()
+	if lastCmdResult == nil {
+		return
+	}
+	if lastCmdResult.customDisplayHook != nil {
+		lastCmdResult.customDisplayHook(lastCmdResult.header, lastCmdResult.rows)
+		return
+	}
+	table := pterm.TableData{
+		lastCmdResult.header,
+	}
+	for _, row := range lastCmdResult.rows {
+		cols := []string{}
+		for _, header := range lastCmdResult.header {
+			cols = append(cols, row[header])
+		}
+		table = append(table, cols)
+	}
+	pterm.DefaultTable.WithHasHeader().WithBoxed().WithRowSeparator("-").WithHeaderRowSeparator("-").WithData(table).Render()
 }
 
 func init() {

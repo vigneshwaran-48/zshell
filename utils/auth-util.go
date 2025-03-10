@@ -22,7 +22,7 @@ type Auth struct {
 	StoredTime   int64
 }
 
-func GetAccessToken(dc string) (string, error) {
+func GetAccessToken(dc string, password string) (string, error) {
 	if dc == "" {
 		return "", fmt.Errorf("Invalid dc have been given: %s", dc)
 	}
@@ -34,27 +34,30 @@ func GetAccessToken(dc string) (string, error) {
 		return "", fmt.Errorf("Given dc_name %s is not exists, Use the login and store this dc authentication", dc)
 	}
 	if auth.AccessToken == "" || time.UnixMilli(auth.StoredTime).Add(45*time.Minute).Before(time.Now()) {
-		accessToken, err := GenerateAccessToken(*auth)
+		accessToken, err := GenerateAccessToken(*auth, password)
 		if err != nil {
 			return "", err
 		}
 		if accessToken == "" {
 			return "", errors.New("Unable to generate latest access_token")
 		}
-		auth.AccessToken = accessToken
+		auth.AccessToken, err = Encrypt(password, accessToken)
+		if err != nil {
+			return "", err
+		}
 		auth.StoredTime = time.Now().UnixMilli()
 		UpdateAuth(*auth)
 	}
-	return auth.AccessToken, nil
+	return Decrypt(password, auth.AccessToken)
 }
 
-func LoginToDC(dcName string) (string, error) {
+func LoginToDC(dcName string, password string) (string, error) {
 	auth, err := FindByDC(dcName)
 	if err != nil {
 		return "", err
 	}
 	if auth != nil {
-    // Already logged in
+		// Already logged in
 		return "", nil
 	}
 	url := fmt.Sprintf("https://accounts.%s/oauth/v2/auth?client_id=%s&redirect_uri=%s&scope=%s&response_type=code&access_type=offline", dcName, viper.GetString(CLIENT_ID), viper.GetString(REDIRECT_URI), viper.GetString(SCOPE))
@@ -63,21 +66,22 @@ func LoginToDC(dcName string) (string, error) {
 	loginCallbackWait := sync.WaitGroup{}
 	loginCallbackWait.Add(1)
 
-	startCallbackServer(dcName, &loginCallbackWait)
+	startCallbackServer(dcName, password, &loginCallbackWait)
 
 	loginCallbackWait.Wait()
 	return url, nil
 }
 
-func GenerateAccessToken(auth Auth) (string, error) {
+func GenerateAccessToken(auth Auth, password string) (string, error) {
 	baseUrl := fmt.Sprintf("https://accounts.%s/oauth/v2/token", auth.DcName)
 
+	refreshToken, err := Decrypt(password, auth.RefreshToken)
 	params := url.Values{}
 	params.Add(CLIENT_ID, viper.GetString(CLIENT_ID))
 	params.Add(CLIENT_SECRET, viper.GetString(CLIENT_SECRET))
 	params.Add(REDIRECT_URI, strings.TrimSpace(viper.GetString(REDIRECT_URI)))
 	params.Add(GRANT_TYPE, "refresh_token")
-	params.Add(REFRESH_TOKEN, auth.RefreshToken)
+	params.Add(REFRESH_TOKEN, refreshToken)
 
 	url := fmt.Sprintf("%s?%s", baseUrl, params.Encode())
 	resp, err := http.Post(url, "application/json", nil)
@@ -90,7 +94,7 @@ func GenerateAccessToken(auth Auth) (string, error) {
 	return response["access_token"], nil
 }
 
-func generateAndStoreRefreshTokenWithCode(dcName string, code string) error {
+func generateAndStoreRefreshTokenWithCode(dcName string, password string, code string) error {
 	accessTokenURL := fmt.Sprintf("https://accounts.%s/oauth/v2/token?client_id=%s&client_secret=%s&code=%s&redirect_uri=%s&grant_type=authorization_code", dcName, viper.GetString(CLIENT_ID), viper.GetString(CLIENT_SECRET), code, viper.GetString(REDIRECT_URI))
 
 	resp, err := http.Post(accessTokenURL, "application/json", nil)
@@ -107,6 +111,7 @@ func generateAndStoreRefreshTokenWithCode(dcName string, code string) error {
 		return fmt.Errorf("Didn't get refresh token in token request, It may have already generated. Please delete the 'ZShell' application session in connected apps accounts.%s", dcName)
 	}
 
+	refreshToken, err = Encrypt(password, refreshToken)
 	_, err = AddAuth(dcName, refreshToken)
 	if err != nil {
 		return err
@@ -114,7 +119,7 @@ func generateAndStoreRefreshTokenWithCode(dcName string, code string) error {
 	return nil
 }
 
-func startCallbackServer(dcName string, wg *sync.WaitGroup) {
+func startCallbackServer(dcName string, password string, wg *sync.WaitGroup) {
 	server := http.Server{
 		Addr: fmt.Sprintf(":%s", viper.GetString(PORT)),
 	}
@@ -124,7 +129,7 @@ func startCallbackServer(dcName string, wg *sync.WaitGroup) {
 			cobra.CheckErr(err)
 		}
 		code := u.Query().Get("code")
-		err = generateAndStoreRefreshTokenWithCode(dcName, code)
+		err = generateAndStoreRefreshTokenWithCode(dcName, password, code)
 		if err != nil {
 			cobra.CheckErr(err)
 		}
@@ -211,7 +216,7 @@ func GetAllAuths() ([]Auth, error) {
 		return nil, nil
 	}
 	if !IsFileExists(authFilePath) {
-		err = CreateDefaultData()
+		err = CreateDefaultAuthData()
 		if err != nil {
 			return nil, err
 		}
@@ -228,7 +233,7 @@ func GetAllAuths() ([]Auth, error) {
 	return authData, nil
 }
 
-func CreateDefaultData() error {
+func CreateDefaultAuthData() error {
 	authFilePath, err := GetAuthDataFile()
 	if err != nil {
 		return err

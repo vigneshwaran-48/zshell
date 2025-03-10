@@ -35,6 +35,8 @@ var previousCmd []string
 
 var password string
 
+var lastCmdResult *CmdResult // For non interactive mode only
+
 func GetCmds() *cobra.Command {
 	return rootCmd
 }
@@ -44,12 +46,23 @@ func ResetPreviousOutput(cmd *cobra.Command, args []string) {
 	SetLastCommandResult(nil)
 }
 
-func SetLastCommandResult(lastCmdResult *CmdResult) {
-	ctx := context.WithValue(app.ActiveMenu().Context(), lastCmdResultKey, lastCmdResult)
+func SetLastCommandResult(result *CmdResult) {
+	if !IsInteractiveMode() {
+		lastCmdResult = result
+		return
+	}
+	ctx := context.WithValue(app.ActiveMenu().Context(), lastCmdResultKey, result)
 	app.ActiveMenu().SetContext(ctx)
 }
 
+func IsInteractiveMode() bool {
+	return app != nil
+}
+
 func GetLastCmdResult() *CmdResult {
+	if !IsInteractiveMode() {
+		return lastCmdResult
+	}
 	value := app.ActiveMenu().Context().Value(lastCmdResultKey)
 	if value != nil {
 		return value.(*CmdResult)
@@ -192,7 +205,7 @@ func getAuthDetails(cmd *cobra.Command) (*zmail.APIClient, context.Context) {
 	if err != nil {
 		cobra.CheckErr(err)
 	}
-	accessToken, err := utils.GetAccessToken(dcName)
+	accessToken, err := utils.GetAccessToken(dcName, password)
 	if err != nil {
 		cobra.CheckErr(err)
 	}
