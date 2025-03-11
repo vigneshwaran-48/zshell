@@ -38,5 +38,12 @@ func GetConfigDirPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s/.zmail", userHomeDir), nil
+	config := fmt.Sprintf("%s/.zmail", userHomeDir)
+	if !IsFileExists(config) {
+		err = os.Mkdir(config, 0o755)
+		if err != nil {
+			return "", err
+		}
+	}
+	return config, nil
 }

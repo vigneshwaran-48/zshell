@@ -62,7 +62,7 @@ func FindAllAlias() ([]models.Alias, error) {
 		return nil, err
 	}
 	if !utils.IsFileExists(aliasFilePath) {
-		err = createDefaultAliasData()
+		err = CreateDefaultAliasData()
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +134,7 @@ func getAliasStoreFile() (string, error) {
 	return fmt.Sprintf("%s/alias.json", configDir), nil
 }
 
-func createDefaultAliasData() error {
+func CreateDefaultAliasData() error {
 	aliasFilePath, err := getAliasStoreFile()
 	if err != nil {
 		return err
